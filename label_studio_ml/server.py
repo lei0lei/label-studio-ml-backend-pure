@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 import logging
 import argparse
@@ -166,6 +167,15 @@ def create_dir(args):
 
 
 def start_server(args, subprocess_params):
+    # 强制定位到项目根目录下的 embedded_python\python.exe
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    embedded_python = os.path.join(root_dir, 'embedded_python', 'python.exe')
+    
+    if os.path.exists(embedded_python):
+        python_exe = f'"{embedded_python}"'
+    else:
+        # 如果没找到嵌入式环境（比如正常安装模式），则使用当前解释器
+        python_exe = f'"{sys.executable}"'
 
     project_dir = os.path.join(args.root_dir, args.project_name)
     wsgi = os.path.join(project_dir, '_wsgi.py')
@@ -175,8 +185,10 @@ def start_server(args, subprocess_params):
         cmd_args = ["--basic-auth-user", args.basic_auth_user,
                     "--basic-auth-pass", args.basic_auth_pass]
     
-    cmd = 'python ' + wsgi + ' ' + ' '.join(cmd_args) + ' ' + ' '.join(subprocess_params)
+    # 保持 wsgi 为相对路径，解决之前的 ModuleNotFoundError 问题
+    cmd = python_exe + ' ' + wsgi + ' ' + ' '.join(cmd_args) + ' ' + ' '.join(subprocess_params)
     
+    print(f"Starting server with command: {cmd}")
     os.system(cmd)
 
 

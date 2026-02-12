@@ -6,8 +6,11 @@ import json
 import logging
 import logging.config
 
+# 将当前项目目录加入 path (解决从 _wsgi 启动时找不到同级 model.py 的问题)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+
 # Add project root to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Add embedded Python site-packages to path first
 embedded_site = os.path.join(os.path.dirname(__file__), '..', 'embedded_python', 'Lib', 'site-packages')
