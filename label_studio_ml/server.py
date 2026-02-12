@@ -167,29 +167,40 @@ def create_dir(args):
 
 
 def start_server(args, subprocess_params):
-    # 强制定位到项目根目录下的 embedded_python\python.exe
-    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    embedded_python = os.path.join(root_dir, 'embedded_python', 'python.exe')
+    # 获取 label_studio_ml\server.py 所在的绝对目录
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     
-    if os.path.exists(embedded_python):
-        python_exe = f'"{embedded_python}"'
-    else:
-        # 如果没找到嵌入式环境（比如正常安装模式），则使用当前解释器
-        python_exe = f'"{sys.executable}"'
+    # 强制定位到 embedded_python\python.exe 的绝对路径
+    embedded_python = os.path.join(base_dir, 'embedded_python', 'python.exe')
+    
+    # 确定要使用的 python 解释器路径（不带引号，列表模式会自动处理空格）
+    python_exe = embedded_python if os.path.exists(embedded_python) else sys.executable
 
-    project_dir = os.path.join(args.root_dir, args.project_name)
+    # 始终以 server.py 所在目录为根，拼接 project_name
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    project_dir = os.path.join(repo_root, args.project_name)
     wsgi = os.path.join(project_dir, '_wsgi.py')
 
-    cmd_args = []
+    if not os.path.exists(wsgi):
+        print(Fore.RED + f"Error: {wsgi} not found.")
+        return
+
+    # 构造命令列表
+    cmd = [python_exe, wsgi]
     if args.basic_auth_user and args.basic_auth_pass:
-        cmd_args = ["--basic-auth-user", args.basic_auth_user,
-                    "--basic-auth-pass", args.basic_auth_pass]
+        cmd.extend(["--basic-auth-user", args.basic_auth_user,
+                    "--basic-auth-pass", args.basic_auth_pass])
     
-    # 保持 wsgi 为相对路径，解决之前的 ModuleNotFoundError 问题
-    cmd = python_exe + ' ' + wsgi + ' ' + ' '.join(cmd_args) + ' ' + ' '.join(subprocess_params)
+    # 合并其他参数
+    cmd.extend(subprocess_params)
     
-    print(f"Starting server with command: {cmd}")
-    os.system(cmd)
+    print(f"Starting server with command: {' '.join(f'\"{c}\"' if ' ' in c else c for c in cmd)}")
+    
+    try:
+        # 使用列表模式启动，由操作系统直接处理参数，彻底解决“语法不正确”的引号问题
+        subprocess.call(cmd)
+    except Exception as e:
+        print(Fore.RED + f"Failed to start server: {e}")
 
 
 def deploy_to_gcp(args):
