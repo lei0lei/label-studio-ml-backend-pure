@@ -31,9 +31,7 @@ def init_app(model_class, basic_auth_user=None, basic_auth_pass=None):
     return _server
 
 
-@_server.route('/predict', methods=['POST'])
-@exception_handler
-def _predict():
+def _predict_impl(model_name=None, model_task=None, model_family=None):
     """
     Predict tasks
 
@@ -66,6 +64,13 @@ def _predict():
 
     # model.use_label_config(label_config)
 
+    if model_name:
+        params['model_name'] = model_name
+    if model_task:
+        params['model_task'] = model_task
+    if model_family:
+        params['model_family'] = model_family
+
     response = model.predict(tasks, context=context, **params)
 
     # if there is no model version we will take the default
@@ -89,9 +94,27 @@ def _predict():
     return jsonify({'results': res})
 
 
-@_server.route('/setup', methods=['POST'])
+@_server.route('/predict', methods=['POST'])
 @exception_handler
-def _setup():
+def _predict():
+    return _predict_impl(model_name=None)
+
+
+@_server.route('/model/<model_name>', methods=['POST'])
+@_server.route('/model/<model_name>/predict', methods=['POST'])
+@exception_handler
+def _predict_by_model(model_name):
+    return _predict_impl(model_name=model_name)
+
+
+@_server.route('/model/<model_task>/<model_family>/<model_name>', methods=['POST'])
+@_server.route('/model/<model_task>/<model_family>/<model_name>/predict', methods=['POST'])
+@exception_handler
+def _predict_by_task_family_model(model_task, model_family, model_name):
+    return _predict_impl(model_name=model_name, model_task=model_task, model_family=model_family)
+
+
+def _setup_impl(model_name=None, model_task=None, model_family=None):
     data = request.json
     project_id = data.get('project').split('.', 1)[0]
     label_config = data.get('schema')
@@ -102,8 +125,26 @@ def _setup():
     if extra_params:
         model.set_extra_params(extra_params)
 
-    model_version = model.get('model_version')
+    model_version = model_name or model.get('model_version')
     return jsonify({'model_version': model_version})
+
+
+@_server.route('/setup', methods=['POST'])
+@exception_handler
+def _setup():
+    return _setup_impl(model_name=None)
+
+
+@_server.route('/model/<model_name>/setup', methods=['POST'])
+@exception_handler
+def _setup_by_model(model_name):
+    return _setup_impl(model_name=model_name)
+
+
+@_server.route('/model/<model_task>/<model_family>/<model_name>/setup', methods=['POST'])
+@exception_handler
+def _setup_by_task_family_model(model_task, model_family, model_name):
+    return _setup_impl(model_name=model_name, model_task=model_task, model_family=model_family)
 
 
 TRAIN_EVENTS = (
@@ -143,9 +184,45 @@ def health():
     })
 
 
+@_server.route('/model/<model_name>', methods=['GET'])
+@_server.route('/model/<model_name>/health', methods=['GET'])
+@exception_handler
+def health_by_model(model_name):
+    return jsonify({
+        'status': 'UP',
+        'model_class': MODEL_CLASS.__name__,
+        'model_name': model_name
+    })
+
+
+@_server.route('/model/<model_task>/<model_family>/<model_name>', methods=['GET'])
+@_server.route('/model/<model_task>/<model_family>/<model_name>/health', methods=['GET'])
+@exception_handler
+def health_by_task_family_model(model_task, model_family, model_name):
+    return jsonify({
+        'status': 'UP',
+        'model_class': MODEL_CLASS.__name__,
+        'model_task': model_task,
+        'model_family': model_family,
+        'model_name': model_name
+    })
+
+
 @_server.route('/metrics', methods=['GET'])
 @exception_handler
 def metrics():
+    return jsonify({})
+
+
+@_server.route('/model/<model_name>/metrics', methods=['GET'])
+@exception_handler
+def metrics_by_model(model_name):
+    return jsonify({})
+
+
+@_server.route('/model/<model_task>/<model_family>/<model_name>/metrics', methods=['GET'])
+@exception_handler
+def metrics_by_task_family_model(model_task, model_family, model_name):
     return jsonify({})
 
 

@@ -1,0 +1,22 @@
+<View>
+  <Header value="SAM2 交互分割（Mask/RLE 输出）"/>
+
+  <Image name="image"
+         value="$image"
+         zoom="true"
+         zoomControl="true"
+         rotateControl="true"/>
+
+  <RectangleLabels name="bbox_prompt" toName="image">
+    <Label value="object" background="#3B82F6"/>
+  </RectangleLabels>
+
+  <KeyPointLabels name="point_prompt" toName="image">
+    <Label value="positive" background="#10B981"/>
+    <Label value="negative" background="#EF4444"/>
+  </KeyPointLabels>
+
+  <BrushLabels name="label" toName="image">
+    <Label value="object" background="#F59E0B"/>
+  </BrushLabels>
+</View>

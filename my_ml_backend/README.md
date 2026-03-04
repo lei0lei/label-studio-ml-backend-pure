@@ -45,6 +45,31 @@ label-studio-ml start ./dir_with_your_model
 # Configuration
 Parameters can be set in `docker-compose.yml` before running the container.
 
+## Model routing parameters
+
+You can route inference by passing these parameters in ML backend requests:
+
+- `model_family`: model family, e.g. `yolov8`, `yolo11`, `yolo26`, `sam2`
+- `model_task`: task type, e.g. `detect`, `segment`, `obb`
+- `model_name`: model file name without extension, e.g. `best`, `obb_640`
+
+### SAM2 integration
+
+- Use `model_family=sam2` and `model_task=segment`.
+- The backend uses the SAM backend path and does **not** force YOLO `imgsz` arguments.
+- If Label Studio interaction context provides `keypointlabels` and/or `rectanglelabels`, those prompts are forwarded to SAM as points/boxes.
+- If no prompts are provided, SAM runs segmentation with default model behavior.
+
+Example request params:
+
+```json
+{
+	"model_family": "sam2",
+	"model_task": "segment",
+	"model_name": "best"
+}
+```
+
 
 The following common parameters are available:
 - `BASIC_AUTH_USER` - specify the basic auth user for the model server

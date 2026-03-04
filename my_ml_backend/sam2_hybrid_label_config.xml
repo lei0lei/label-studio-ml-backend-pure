@@ -1,0 +1,32 @@
+<View>
+  <Header value="SAM2 交互分割模板（支持 Polygon 与 Mask/RLE）"/>
+
+  <Image
+    name="image"
+    value="$image"
+    zoom="true"
+    zoomControl="true"
+    rotateControl="true"
+    maxWidth="100%"/>
+
+  <Header value="提示输入（至少画一个框，点提示可选）"/>
+
+  <RectangleLabels name="bbox_prompt" toName="image" smart="false">
+    <Label value="object" background="#3B82F6"/>
+  </RectangleLabels>
+
+  <KeyPointLabels name="point_prompt" toName="image" smart="false">
+    <Label value="positive" background="#10B981"/>
+    <Label value="negative" background="#EF4444"/>
+  </KeyPointLabels>
+
+  <Header value="模型输出（可同时保留两种展示）"/>
+
+  <PolygonLabels name="poly_result" toName="image">
+    <Label value="object" background="#F59E0B"/>
+  </PolygonLabels>
+
+  <BrushLabels name="mask_result" toName="image">
+    <Label value="object" background="#A855F7"/>
+  </BrushLabels>
+</View>

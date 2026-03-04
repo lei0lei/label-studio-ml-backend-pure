@@ -4,3 +4,20 @@ requests~=2.31
 semver~=3.0.2
 label-studio-sdk>=2.0
 # label-studio-sdk @ git+https://github.com/HumanSignal/label-studio-sdk.git
+
+# YOLOv8
+ultralytics
+
+# SAM2 (official)
+# Requires Python>=3.10 and torch>=2.5.1.
+# Native Windows install (without WSL)
+git+https://github.com/facebookresearch/sam2.git
+opencv-python
+Pillow
+huggingface_hub>=0.24
+
+# GPU PyTorch (CUDA 12.1)
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch==2.5.1+cu121 ; platform_system == "Windows"
+torchvision==0.20.1+cu121 ; platform_system == "Windows"
+torchaudio==2.5.1+cu121 ; platform_system == "Windows"

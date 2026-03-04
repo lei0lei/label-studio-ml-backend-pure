@@ -133,3 +133,5 @@ dmypy.json
 
 .idea/
 embedded_python/Lib
+
+*.pt
