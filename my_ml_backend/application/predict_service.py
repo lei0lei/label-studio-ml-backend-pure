@@ -1,3 +1,9 @@
+"""Prediction application service.
+
+This module orchestrates model route resolution, model loading, path resolution,
+backend inference, and Label Studio response assembly.
+"""
+
 from typing import Dict, List, Optional
 
 from label_studio_ml.response import ModelResponse
@@ -5,6 +11,8 @@ from backend_core.domain.routing import build_route_spec
 
 
 class PredictService:
+    """Application-layer facade for batch prediction requests."""
+
     def __init__(
         self,
         model_loader,
@@ -28,6 +36,12 @@ class PredictService:
         self.logger = logger
 
     def predict(self, tasks: List[Dict], context: Optional[Dict] = None, **kwargs) -> ModelResponse:
+        """Run end-to-end prediction for Label Studio tasks.
+
+        The method resolves routing parameters from ``kwargs`` and ``context``,
+        validates compatibility, executes per-task inference, and returns a
+        ``ModelResponse`` payload that Label Studio can consume directly.
+        """
         model_name = kwargs.get('model_name')
         if not model_name and isinstance(context, dict):
             model_name = context.get('model_name')

@@ -1,9 +1,17 @@
+"""Label config tag resolution utilities.
+
+Selects compatible Label Studio control/object tags and derives output schema
+metadata for downstream result rendering.
+"""
+
 import logging
 from dataclasses import dataclass
 
 
 @dataclass
 class TagMapping:
+    """Resolved Label Studio mapping tuple used by post-processing."""
+
     from_name: str
     to_name: str
     labels_in_config: list
@@ -12,10 +20,13 @@ class TagMapping:
 
 
 class TagMapper:
+    """Resolve task-aware control/object tag mappings from label config."""
+
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)
 
     def _select_tag_candidates(self, model_task: str):
+        """Return result defaults and candidate control/object combinations."""
         if model_task == 'segment':
             return 'polygonlabels', 'polygonlabels', [
                 ('BrushLabels', 'Image'),
@@ -37,6 +48,7 @@ class TagMapper:
         ]
 
     def resolve(self, model_task: str, get_first_tag_occurence, parsed_label_config, fallback_from_name: str, fallback_to_name: str):
+        """Resolve first valid tag mapping, or fallback to provided defaults."""
         default_result_type, default_label_key, candidates = self._select_tag_candidates(model_task)
 
         for control_type, object_type in candidates:

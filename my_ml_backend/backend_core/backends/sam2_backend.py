@@ -1,3 +1,9 @@
+"""SAM2 backend adapter and lightweight output wrappers.
+
+Includes prompt extraction, image-level predictor wrapper, and conversion of
+SAM2 outputs into a shape compatible with shared post-processing utilities.
+"""
+
 import os
 import logging
 from typing import Dict, Optional
@@ -9,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class _ArrayProxy:
+    """Minimal tensor-like proxy exposing ``cpu().numpy()`` chain."""
+
     def __init__(self, values):
         self._values = values
 
@@ -20,17 +28,23 @@ class _ArrayProxy:
 
 
 class _SimpleBoxes:
+    """Simplified boxes object carrying class and confidence arrays."""
+
     def __init__(self, cls_values, conf_values):
         self.cls = _ArrayProxy(cls_values)
         self.conf = _ArrayProxy(conf_values)
 
 
 class _SimpleMasks:
+    """Simplified masks object carrying normalized polygon points."""
+
     def __init__(self, polygons):
         self.xyn = polygons
 
 
 class _SimpleInferenceResult:
+    """Unified inference result shape expected by presentation builders."""
+
     def __init__(self, image_shape, polygons, scores, binary_masks=None):
         self.orig_shape = image_shape
         self.masks = _SimpleMasks(polygons)
@@ -43,7 +57,10 @@ class _SimpleInferenceResult:
 
 
 class Sam2ImageWrapper:
+    """Image predictor wrapper around SAM2 interactive segmentation model."""
+
     def __init__(self, checkpoint_path: str):
+        """Initialize SAM2 predictor and handle portable non-JIT fallback."""
         os.environ.setdefault('PYTORCH_JIT', '0')
         try:
             import cv2
@@ -76,6 +93,7 @@ class Sam2ImageWrapper:
                 torch.jit.script = original_script
 
     def _infer_model_config(self, checkpoint_path: str):
+        """Infer SAM2 config path from checkpoint filename pattern."""
         checkpoint_name = os.path.basename(checkpoint_path).lower()
 
         mapping = [
@@ -95,6 +113,7 @@ class Sam2ImageWrapper:
         return 'configs/sam2.1/sam2.1_hiera_t.yaml'
 
     def _mask_to_polygon(self, mask, image_width: int, image_height: int):
+        """Extract largest external contour and normalize to [0, 1] polygon."""
         contours, _ = self.cv2.findContours(mask, self.cv2.RETR_EXTERNAL, self.cv2.CHAIN_APPROX_SIMPLE)
         if not contours:
             return None
@@ -113,6 +132,7 @@ class Sam2ImageWrapper:
         return polygon
 
     def __call__(self, local_path: str, points=None, labels=None, bboxes=None):
+        """Run SAM2 with interactive prompts and return normalized result list."""
         image_bgr = self.cv2.imread(local_path, self.cv2.IMREAD_COLOR)
         if image_bgr is None:
             raise RuntimeError(f'Failed to load image for SAM2: {local_path}')
@@ -214,14 +234,18 @@ class Sam2ImageWrapper:
 
 
 class Sam2BackendAdapter(BackendAdapter):
+    """Adapter that runs SAM2 prompt-based segmentation inference."""
+
     backend_name = 'sam2'
     supports_training = False
 
     @property
     def model_cls(self):
+        """Return wrapper class used to initialize SAM2 image predictor."""
         return Sam2ImageWrapper
 
     def _extract_sam_prompts(self, context: Optional[Dict], task: Dict):
+        """Extract point/box prompts for the current task from LS context."""
         if not isinstance(context, dict):
             return None, None, None
 
@@ -281,6 +305,7 @@ class Sam2BackendAdapter(BackendAdapter):
         return points_arg, labels_arg, bboxes_arg
 
     def run(self, selected_model, local_path: str, model_task: str, imgsz: int, context: Optional[Dict], task: Dict):
+        """Execute SAM2 inference with prompts derived from interaction context."""
         points_arg, labels_arg, bboxes_arg = self._extract_sam_prompts(context, task)
         infer_kwargs = {}
         if points_arg is not None:

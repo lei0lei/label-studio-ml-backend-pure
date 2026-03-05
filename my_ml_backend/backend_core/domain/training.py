@@ -1,14 +1,19 @@
+"""Training domain entities and timestamps."""
+
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 
 def _utcnow_iso() -> str:
+    """Return current UTC timestamp in ISO-8601 format."""
     return datetime.now(timezone.utc).isoformat()
 
 
 @dataclass
 class TrainRequest:
+    """Training command payload captured at request time."""
+
     event: str
     data: Dict[str, Any]
     params: Dict[str, Any]
@@ -21,6 +26,8 @@ class TrainRequest:
 
 @dataclass
 class TrainJob:
+    """Long-running training job state tracked by storage layer."""
+
     job_id: str
     status: str
     request: TrainRequest

@@ -1,13 +1,22 @@
+"""Task image path resolution.
+
+Resolves Label Studio image URLs to local file paths using local upload lookup,
+URL normalization, and fallback API download resolver.
+"""
+
 import logging
 import os
 from urllib.parse import urljoin, urlparse, unquote
 
 
 class PathResolver:
+    """Infrastructure adapter for resolving image paths for inference."""
+
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)
 
     def _resolve_upload_local_file(self, image_url: str, task_id=None):
+        """Resolve `/data/upload/...` URL to an existing local media file path."""
         if not isinstance(image_url, str) or not image_url:
             return None
 
@@ -50,6 +59,7 @@ class PathResolver:
         return None
 
     def resolve(self, image_url: str, task_id, get_local_path):
+        """Resolve image URL to local path, with Label Studio API fallback."""
         local_upload_path = self._resolve_upload_local_file(image_url, task_id=task_id)
         if local_upload_path:
             return local_upload_path

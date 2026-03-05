@@ -1,3 +1,9 @@
+"""Label Studio prediction result builders.
+
+Transforms backend-native inference outputs into Label Studio annotation
+structures for detection, oriented bounding boxes, and segmentation tasks.
+"""
+
 import logging
 import math
 from typing import Optional
@@ -14,10 +20,13 @@ except ImportError:
 
 
 class LabelStudioResultBuilder:
+    """Build Label Studio-compliant prediction result payloads."""
+
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)
 
     def _pick_output_label(self, labels_in_config, label_index: Optional[int], model_label: Optional[str]):
+        """Resolve output label preference from config, class index, and model label."""
         if not labels_in_config:
             return model_label or 'object'
         if label_index is not None and label_index < len(labels_in_config):
@@ -27,6 +36,7 @@ class LabelStudioResultBuilder:
         return labels_in_config[0]
 
     def build_detection_results(self, inference_result, from_name: str, to_name: str, labels_in_config):
+        """Build rectangle-label results from standard detection boxes."""
         results = []
         boxes = getattr(inference_result, 'boxes', None)
         if boxes is None or boxes.data is None:
@@ -59,6 +69,7 @@ class LabelStudioResultBuilder:
         return results
 
     def build_obb_results(self, inference_result, from_name: str, to_name: str, labels_in_config):
+        """Build oriented bounding box results in Label Studio rectangle format."""
         results = []
         obb = getattr(inference_result, 'obb', None)
         if obb is None:
@@ -236,6 +247,7 @@ class LabelStudioResultBuilder:
         return results
 
     def build_segment_results(self, inference_result, from_name: str, to_name: str, labels_in_config, result_type: str):
+        """Build segmentation output as polygon labels or brush labels."""
         results = []
         masks = getattr(inference_result, 'masks', None)
         if masks is None:
@@ -333,6 +345,7 @@ class LabelStudioResultBuilder:
         return results
 
     def build(self, inference_result, model_task: str, from_name: str, to_name: str, labels_in_config, result_type: str):
+        """Dispatch to task-specific result builder based on ``model_task``."""
         if model_task == 'segment':
             return self.build_segment_results(
                 inference_result=inference_result,

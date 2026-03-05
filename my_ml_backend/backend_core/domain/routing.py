@@ -1,3 +1,5 @@
+"""Routing domain rules for model task/family/backend selection."""
+
 from dataclasses import dataclass
 from typing import Dict, Optional, Set, Tuple
 import re
@@ -16,6 +18,8 @@ FAMILY_TASKS: Dict[str, Set[str]] = {
 
 @dataclass(frozen=True)
 class RouteSpec:
+    """Canonical routing result used across predict/train pipelines."""
+
     model_name: str
     model_task: str
     model_family: str
@@ -24,6 +28,7 @@ class RouteSpec:
 
 
 def normalize_task(model_task: Optional[str]) -> str:
+    """Normalize task aliases to canonical task identifiers."""
     value = (model_task or 'detect').strip().lower()
     aliases = {
         'det': 'detect',
@@ -39,6 +44,7 @@ def normalize_task(model_task: Optional[str]) -> str:
 
 
 def normalize_family(model_family: Optional[str]) -> str:
+    """Normalize model family aliases to canonical family name."""
     value = (model_family or 'yolov8').strip().lower().replace('_', '').replace('-', '')
     aliases = {
         'yolov26': 'yolo26',
@@ -50,6 +56,7 @@ def normalize_family(model_family: Optional[str]) -> str:
 
 
 def family_exists(model_family: str) -> bool:
+    """Return whether a model family is recognized by routing rules."""
     if model_family in FAMILY_TASKS:
         return True
     if model_family.startswith('yolo'):
@@ -58,6 +65,7 @@ def family_exists(model_family: str) -> bool:
 
 
 def is_task_supported(model_family: str, model_task: str) -> bool:
+    """Return whether task is supported for the selected model family."""
     if model_family in FAMILY_TASKS:
         return model_task in FAMILY_TASKS[model_family]
     if model_family.startswith('yolo'):
@@ -66,12 +74,14 @@ def is_task_supported(model_family: str, model_task: str) -> bool:
 
 
 def resolve_backend(model_family: str) -> str:
+    """Map model family to backend adapter namespace."""
     if model_family.startswith('sam2') or model_family == 'sam2':
         return 'sam2'
     return 'yolo'
 
 
 def parse_model_name_and_imgsz(raw_model_name: Optional[str]) -> Tuple[str, int]:
+    """Parse model name and optional image size suffix (e.g. ``name_640``)."""
     model_name = str(raw_model_name or 'best')
     imgsz = 640
     size_match = re.match(r'^(?P<base>.+)_(?P<size>\d+)$', model_name)
@@ -81,6 +91,7 @@ def parse_model_name_and_imgsz(raw_model_name: Optional[str]) -> Tuple[str, int]
 
 
 def build_route_spec(raw_model_name: Optional[str], raw_model_task: Optional[str], raw_model_family: Optional[str]) -> RouteSpec:
+    """Build canonical route spec from raw request parameters."""
     model_name, imgsz = parse_model_name_and_imgsz(raw_model_name)
     model_task = normalize_task(raw_model_task)
     model_family = normalize_family(raw_model_family)

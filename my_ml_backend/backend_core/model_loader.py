@@ -1,3 +1,9 @@
+"""Model loading and cache management.
+
+Resolves safe model paths from route information and lazily instantiates
+backend model objects with in-process caching.
+"""
+
 import logging
 import os
 import re
@@ -8,26 +14,32 @@ logger = logging.getLogger(__name__)
 
 
 class ModelLoader:
+    """Resolve model artifacts and load backend model instances on demand."""
+
     _loaded_models = {}
 
     def __init__(self, model_dir: str, default_model_path: str, default_sam2_model_path: str):
+        """Initialize loader with model directory and default fallback files."""
         self.model_dir = model_dir
         self.default_model_path = default_model_path
         self.default_sam2_model_path = default_sam2_model_path
 
     def _sanitize_model_name(self, model_name: str):
+        """Normalize model name into a filesystem-safe identifier."""
         if not model_name:
             return 'best'
         safe_name = re.sub(r'[^0-9a-zA-Z_\-.]', '', str(model_name))
         return safe_name or 'best'
 
     def _sanitize_model_segment(self, segment: str):
+        """Normalize route segment (task/family) for safe path composition."""
         if not segment:
             return None
         safe_segment = re.sub(r'[^0-9a-zA-Z_\-]', '', str(segment))
         return safe_segment or None
 
     def _resolve_model_path(self, model_name: str, model_task: Optional[str] = None, model_family: Optional[str] = None, backend: Optional[str] = None):
+        """Resolve model file path and deterministic cache key for a route."""
         safe_name = self._sanitize_model_name(model_name)
         safe_task = self._sanitize_model_segment(model_task)
         safe_family = self._sanitize_model_segment(model_family)
@@ -60,6 +72,7 @@ class ModelLoader:
         return self.default_model_path, fallback_key
 
     def get_or_load_model(self, route_spec, backend_registry):
+        """Return cached model instance or lazily load a new one."""
         adapter = backend_registry.get_adapter(route_spec.backend)
         if adapter is None:
             logger.error("Backend unavailable for family=%s", route_spec.model_family)

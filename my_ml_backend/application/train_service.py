@@ -1,3 +1,8 @@
+"""Training application service.
+
+Provides training job orchestration on top of backend adapters and job storage.
+"""
+
 from typing import Any, Dict
 
 from backend_core.domain.routing import build_route_spec
@@ -5,6 +10,8 @@ from backend_core.domain.training import TrainRequest
 
 
 class TrainService:
+    """Coordinates training requests and job lifecycle transitions."""
+
     def __init__(self, backend_registry, family_exists, job_store, logger):
         self.backend_registry = backend_registry
         self.family_exists = family_exists
@@ -12,6 +19,11 @@ class TrainService:
         self.logger = logger
 
     def fit(self, event: str, data: Dict[str, Any], **kwargs):
+        """Create and execute a training job for the resolved model route.
+
+        Returns a serialized job snapshot containing status, timestamps,
+        route metadata, and optional training result.
+        """
         data = data or {}
         params = dict(kwargs)
 
@@ -75,6 +87,7 @@ class TrainService:
         return self._serialize_job(job)
 
     def _serialize_job(self, job):
+        """Convert internal ``TrainJob`` entity to API-facing dictionary."""
         return {
             'job_id': job.job_id,
             'status': job.status,
