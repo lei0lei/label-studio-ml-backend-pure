@@ -10,6 +10,7 @@ except ImportError:
 
 class YoloBackendAdapter(BackendAdapter):
     backend_name = 'yolo'
+    supports_training = False
 
     @property
     def model_cls(self):

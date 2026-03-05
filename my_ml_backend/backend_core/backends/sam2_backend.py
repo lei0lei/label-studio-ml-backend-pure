@@ -215,6 +215,7 @@ class Sam2ImageWrapper:
 
 class Sam2BackendAdapter(BackendAdapter):
     backend_name = 'sam2'
+    supports_training = False
 
     @property
     def model_cls(self):
