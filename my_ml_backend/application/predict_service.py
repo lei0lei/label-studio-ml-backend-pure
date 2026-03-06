@@ -85,6 +85,26 @@ class PredictService:
         )
 
         predictions = []
+
+        def _has_sam2_features(ctx):
+            if not isinstance(ctx, dict):
+                return False
+            direct_features = ctx.get('sam2_features')
+            if isinstance(direct_features, dict):
+                return True
+
+            result_items = ctx.get('result')
+            if not isinstance(result_items, list):
+                return False
+            for item in result_items:
+                if not isinstance(item, dict):
+                    continue
+                item_meta = item.get('meta')
+                if isinstance(item_meta, dict) and isinstance(item_meta.get('sam2_features'), dict):
+                    return True
+            return False
+
+        context_has_sam2_features = _has_sam2_features(context)
         for task in tasks:
             task_id = task.get('id')
             image_url = task['data'].get('image') or task['data'].get('image_url')
@@ -99,12 +119,16 @@ class PredictService:
                 predictions.append({"result": [], "score": 0.0, "model_version": model_version})
                 continue
 
-            try:
-                local_path = self.resolve_local_path(image_url, task_id=task_id)
-            except Exception as exc:
-                self.logger.error("task_id=%s failed to resolve local image path: %s", task_id, exc)
-                predictions.append({"result": [], "score": 0.0, "model_version": model_version})
-                continue
+            local_path = ''
+            if not (model_family == 'sam2' and context_has_sam2_features):
+                try:
+                    local_path = self.resolve_local_path(image_url, task_id=task_id)
+                except Exception as exc:
+                    self.logger.error("task_id=%s failed to resolve local image path: %s", task_id, exc)
+                    predictions.append({"result": [], "score": 0.0, "model_version": model_version})
+                    continue
+            else:
+                self.logger.info('task_id=%s uses SAM2 feature payload, skip local image resolution', task_id)
 
             results = self.run_inference(
                 selected_model=selected_model,

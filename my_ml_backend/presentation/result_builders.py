@@ -35,6 +35,22 @@ class LabelStudioResultBuilder:
             return model_label
         return labels_in_config[0]
 
+    def _attach_sam2_features(self, results, inference_result):
+        if not results:
+            return results
+        sam2_features = getattr(inference_result, 'sam2_features', None)
+        if not sam2_features:
+            return results
+        if not isinstance(results[0], dict):
+            return results
+
+        meta = results[0].get('meta')
+        if not isinstance(meta, dict):
+            meta = {}
+        meta['sam2_features'] = sam2_features
+        results[0]['meta'] = meta
+        return results
+
     def build_detection_results(self, inference_result, from_name: str, to_name: str, labels_in_config):
         """Build rectangle-label results from standard detection boxes."""
         results = []
@@ -347,13 +363,14 @@ class LabelStudioResultBuilder:
     def build(self, inference_result, model_task: str, from_name: str, to_name: str, labels_in_config, result_type: str):
         """Dispatch to task-specific result builder based on ``model_task``."""
         if model_task == 'segment':
-            return self.build_segment_results(
+            results = self.build_segment_results(
                 inference_result=inference_result,
                 from_name=from_name,
                 to_name=to_name,
                 labels_in_config=labels_in_config,
                 result_type=result_type,
             )
+            return self._attach_sam2_features(results, inference_result)
         if model_task == 'obb':
             return self.build_obb_results(
                 inference_result=inference_result,

@@ -1,0 +1,22 @@
+<View>
+  <Header value="YOLO-OBB 模板（旋转框）"/>
+
+  <Image
+    name="image"
+    value="$image"
+    zoom="true"
+    zoomControl="true"
+    rotateControl="true"
+    maxWidth="100%"/>
+
+  <RectangleLabels
+    name="label"
+    toName="image"
+    model_obb="true"
+    model_score_threshold="0.25"
+    opacity="0.1">
+    <Label value="ship" background="#8B5CF6"/>
+    <Label value="vehicle" background="#F59E0B"/>
+    <Label value="container" background="#14B8A6"/>
+  </RectangleLabels>
+</View>

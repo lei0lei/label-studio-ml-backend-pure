@@ -1,0 +1,21 @@
+<View>
+  <Header value="YOLO 目标检测模板（RectangleLabels）"/>
+
+  <Image
+    name="image"
+    value="$image"
+    zoom="true"
+    zoomControl="true"
+    rotateControl="true"
+    maxWidth="100%"/>
+
+  <RectangleLabels
+    name="label"
+    toName="image"
+    model_score_threshold="0.25"
+    opacity="0.1">
+    <Label value="person" background="#EF4444"/>
+    <Label value="car" background="#3B82F6"/>
+    <Label value="bus" background="#10B981"/>
+  </RectangleLabels>
+</View>
