@@ -363,7 +363,7 @@ class Sam2ImageWrapper:
                 point_coords=point_coords,
                 point_labels=point_labels,
                 box=box_input,
-                multimask_output=True,
+                multimask_output=False,
             )
 
         masks_np = self.np.asarray(masks)
