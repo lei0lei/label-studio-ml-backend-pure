@@ -184,8 +184,17 @@ class Sam2ImageWrapper:
             box_input = box_array[0] if len(box_array) == 1 else box_array
 
         if point_coords is None and box_input is None:
-            logger.warning('SAM2 requires point or box prompts, but no prompts were provided')
-            return []
+            auto_full_image_box = os.getenv('SAM2_AUTO_FULL_IMAGE_BOX', '1').strip().lower() not in {'0', 'false', 'no'}
+            if not auto_full_image_box:
+                logger.warning('SAM2 requires point or box prompts, but no prompts were provided')
+                return []
+
+            box_input = self.np.asarray([0.0, 0.0, float(image_width - 1), float(image_height - 1)], dtype=self.np.float32)
+            logger.info(
+                'No SAM2 prompts provided, fallback to full-image box prompt: [0,0,%s,%s]',
+                image_width - 1,
+                image_height - 1,
+            )
 
         with self.torch.inference_mode():
             masks, scores, _ = self.predictor.predict(
